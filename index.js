@@ -24,12 +24,28 @@ async function run() {
 
     // database collections
     const toolsCollection = client.db("axel-motors").collection("tools");
+    const orderCollection = client.db("axel-motors").collection("orders");
 
     // Tools details
     app.get("/tools", async (req, res) => {
       const query = {};
       const tools = await toolsCollection.find(query).toArray();
       res.send(tools);
+    });
+
+    // find a single tool details
+    app.get("/tools/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const tool = await toolsCollection.findOne(query);
+      res.send(tool);
+    });
+
+    // post new data in order collection
+    app.post("/orders", async (req, res) => {
+      const orders = req.body;
+      const result = await orderCollection.insertOne(orders);
+      res.send(result);
     });
   } finally {
   }
