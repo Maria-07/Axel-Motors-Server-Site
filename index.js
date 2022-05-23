@@ -44,8 +44,40 @@ async function run() {
     // post new data in order collection
     app.post("/orders", async (req, res) => {
       const orders = req.body;
-      const result = await orderCollection.insertOne(orders);
+      console.log(orders);
+      const id = orders.tools_id;
+      const insertResult = await orderCollection.insertOne(orders);
+      const query = { _id: ObjectId(id) };
+      const tool = await toolsCollection.findOne(query);
+      const leftQuantity = tool.availableQuantity - orders.quantity;
+      const updateQuantity = {
+        $set: {
+          availableQuantity: leftQuantity,
+        },
+      };
+      const updateResult = await toolsCollection.updateOne(
+        query,
+        updateQuantity
+      );
+      const result = { insertResult, updateResult };
       res.send(result);
+    });
+
+    // get data for specific email user
+    app.get("/orders", async (req, res) => {
+      const email = req.query.email;
+      // const toolId = req.query.id;
+      const query = { email: email };
+      const result = await orderCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // delete order
+    app.delete("/orders/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
+      const deleteOrder = await orderCollection.deleteOne(filter);
+      res.send(deleteOrder);
     });
   } finally {
   }
