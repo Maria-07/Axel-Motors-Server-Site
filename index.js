@@ -45,6 +45,21 @@ async function run() {
     const orderCollection = client.db("axel-motors").collection("orders");
     const userCollection = client.db("axel-motors").collection("users");
 
+    //add user admin
+
+    const verifyAdmin = async (req, res, next) => {
+      const requester = req.decoded.email;
+      console.log("res", requester);
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        next();
+      } else {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
+    };
+
     //Add user to user collection
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
@@ -73,6 +88,30 @@ async function run() {
       const query = {};
       const user = await userCollection.find(query).toArray();
       res.send(user);
+    });
+
+    //make admin api
+    app.put(
+      "/users/admin/:email",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const email = req.params.email;
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        return res.send(result);
+      }
+    );
+
+    // get admin
+    app.get("/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = await userCollection.findOne({ email: email });
+      const isAdmin = user.role === "admin";
+      res.send({ admin: isAdmin });
     });
 
     // Tools details
