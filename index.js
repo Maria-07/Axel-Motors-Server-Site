@@ -18,6 +18,24 @@ const client = new MongoClient(uri, {
 });
 console.log(uri);
 
+// verify Token
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "You are unAuthorized" });
+  }
+  const token = authHeader.split(" ")[1];
+  // console.log(authHeader);
+  // console.log(token);
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     await client.connect();
@@ -25,6 +43,37 @@ async function run() {
     // database collections
     const toolsCollection = client.db("axel-motors").collection("tools");
     const orderCollection = client.db("axel-motors").collection("orders");
+    const userCollection = client.db("axel-motors").collection("users");
+
+    //Add user to user collection
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      const filter = { email: email };
+      const options = { upsert: true };
+
+      const updateUser = {
+        $set: user,
+      };
+      const token = jwt.sign(
+        { email: email },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "1d" }
+      );
+      const result = await userCollection.updateOne(
+        filter,
+        updateUser,
+        options
+      );
+      res.send({ result, token });
+    });
+
+    //get user
+    app.get("/users", verifyToken, async (req, res) => {
+      const query = {};
+      const user = await userCollection.find(query).toArray();
+      res.send(user);
+    });
 
     // Tools details
     app.get("/tools", async (req, res) => {
@@ -34,7 +83,7 @@ async function run() {
     });
 
     // find a single tool details
-    app.get("/tools/:id", async (req, res) => {
+    app.get("/tools/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const tool = await toolsCollection.findOne(query);
@@ -42,7 +91,7 @@ async function run() {
     });
 
     // post new data in order collection
-    app.post("/orders", async (req, res) => {
+    app.post("/orders", verifyToken, async (req, res) => {
       const orders = req.body;
       console.log(orders);
       const id = orders.tools_id;
@@ -64,7 +113,7 @@ async function run() {
     });
 
     // get data for specific email user
-    app.get("/orders", async (req, res) => {
+    app.get("/orders", verifyToken, async (req, res) => {
       const email = req.query.email;
       // const toolId = req.query.id;
       const query = { email: email };
