@@ -18,6 +18,9 @@ const client = new MongoClient(uri, {
 });
 console.log(uri);
 
+//payment
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 // verify Token
 function verifyToken(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -45,6 +48,23 @@ async function run() {
     const orderCollection = client.db("axel-motors").collection("orders");
     const userCollection = client.db("axel-motors").collection("users");
     const reviewCollection = client.db("axel-motors").collection("reviews");
+    const paymentCollection = client.db("axel-motors").collection("payments");
+
+    //payment
+    app.post("/create-payment-intent", verifyToken, async (req, res) => {
+      const price = req.body.price;
+      // console.log(price);
+      const amount = price * 100;
+      // console.log(amount);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      // console.log(paymentIntent.client_secret);
+      res.send({ clientSecret: paymentIntent.client_secret });
+    });
 
     //add user admin
     const verifyAdmin = async (req, res, next) => {
@@ -176,6 +196,23 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const tool = await toolsCollection.findOne(query);
       res.send(tool);
+    });
+
+    // find a single tool details
+    app.patch("/tools/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const payment = req.body;
+      const query = { _id: ObjectId(id) };
+      const updateTool = {
+        $set: {
+          paid: true,
+          transactionID: payment.transactionID,
+        },
+      };
+      const updateTools = await toolsCollection.updateOne(query, updateTool);
+      const result = await paymentCollection.insertOne(payment);
+      res.send({ updateTools, result });
     });
 
     // post new data in order collection
