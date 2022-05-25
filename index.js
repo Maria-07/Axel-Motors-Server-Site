@@ -90,6 +90,28 @@ async function run() {
       res.send(user);
     });
 
+    //add user information and update it
+    app.put("/users/myProfile", async (req, res) => {
+      const email = req.query.email;
+      console.log(email);
+      const filter = { email: email };
+      const options = { upsert: true };
+      const data = req.body;
+      console.log(data);
+
+      const updateProfile = {
+        $set: {
+          data,
+        },
+      };
+      const result = await userCollection.updateMany(
+        filter,
+        updateProfile,
+        options
+      );
+      res.send(result);
+    });
+
     //make admin api
     app.put(
       "/users/admin/:email",
@@ -152,6 +174,7 @@ async function run() {
     });
 
     // get data for specific email user
+
     app.get("/orders", verifyToken, async (req, res) => {
       const email = req.query.email;
       // const toolId = req.query.id;
