@@ -44,9 +44,9 @@ async function run() {
     const toolsCollection = client.db("axel-motors").collection("tools");
     const orderCollection = client.db("axel-motors").collection("orders");
     const userCollection = client.db("axel-motors").collection("users");
+    const reviewCollection = client.db("axel-motors").collection("reviews");
 
     //add user admin
-
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
       console.log("res", requester);
@@ -100,9 +100,7 @@ async function run() {
       console.log(data);
 
       const updateProfile = {
-        $set: {
-          data,
-        },
+        $set: data,
       };
       const result = await userCollection.updateMany(
         filter,
@@ -136,11 +134,40 @@ async function run() {
       res.send({ admin: isAdmin });
     });
 
+    //add review api
+    app.post("/review", verifyToken, async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      res.send(result);
+    });
+
+    // get  reviews
+    app.get("/review", async (req, res) => {
+      const query = {};
+      const result = await reviewCollection.find(query).toArray();
+      res.send(result);
+    });
+
     // Tools details
     app.get("/tools", async (req, res) => {
       const query = {};
       const tools = await toolsCollection.find(query).toArray();
       res.send(tools);
+    });
+
+    // add a new tool item
+    app.post("/tools", verifyToken, async (req, res) => {
+      const tool = req.body;
+      const result = await toolsCollection.insertOne(tool);
+      res.send(result);
+    });
+
+    // delete a tool
+    app.delete("/tools/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const deleteTool = await toolsCollection.deleteOne(query);
+      res.send(deleteTool);
     });
 
     // find a single tool details
@@ -174,11 +201,17 @@ async function run() {
     });
 
     // get data for specific email user
-
     app.get("/orders", verifyToken, async (req, res) => {
       const email = req.query.email;
       // const toolId = req.query.id;
       const query = { email: email };
+      const result = await orderCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // get all orders for admin
+    app.get("/allOrders", verifyToken, verifyAdmin, async (req, res) => {
+      const query = {};
       const result = await orderCollection.find(query).toArray();
       res.send(result);
     });
