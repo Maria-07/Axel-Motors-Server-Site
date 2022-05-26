@@ -178,8 +178,13 @@ async function run() {
 
     // Tools details
     app.get("/tools", async (req, res) => {
+      const order = req.query.order;
+      console.log(order);
       const query = {};
-      const tools = await toolsCollection.find(query).toArray();
+      const tools = await toolsCollection
+        .find(query)
+        .sort({ _id: order })
+        .toArray();
       res.send(tools);
     });
 
