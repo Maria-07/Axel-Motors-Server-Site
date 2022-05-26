@@ -184,7 +184,7 @@ async function run() {
     });
 
     // add a new tool item
-    app.post("/tools", verifyToken, async (req, res) => {
+    app.post("/tools", verifyAdmin, verifyToken, async (req, res) => {
       const tool = req.body;
       const result = await toolsCollection.insertOne(tool);
       res.send(result);
@@ -206,7 +206,7 @@ async function run() {
       res.send(tool);
     });
 
-    // find a single tool details
+    // update payment status
     app.patch("/tools/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       console.log(id);
