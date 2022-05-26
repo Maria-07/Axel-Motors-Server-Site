@@ -184,14 +184,14 @@ async function run() {
     });
 
     // add a new tool item
-    app.post("/tools", verifyAdmin, verifyToken, async (req, res) => {
+    app.post("/tools", verifyToken, async (req, res) => {
       const tool = req.body;
       const result = await toolsCollection.insertOne(tool);
       res.send(result);
     });
 
     // delete a tool
-    app.delete("/tools/:id", verifyToken, async (req, res) => {
+    app.delete("/tools/:id", verifyAdmin, verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const deleteTool = await toolsCollection.deleteOne(query);
