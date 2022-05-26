@@ -66,6 +66,14 @@ async function run() {
       res.send({ clientSecret: paymentIntent.client_secret });
     });
 
+    //get payment transaction
+    app.get("/payment/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { tool: id };
+      const result = await paymentCollection.findOne(query);
+      res.send(result);
+    });
+
     //add user admin
     const verifyAdmin = async (req, res, next) => {
       const requester = req.decoded.email;
@@ -183,7 +191,7 @@ async function run() {
     });
 
     // delete a tool
-    app.delete("/tools/:id", verifyToken, async (req, res) => {
+    app.delete("/tools/:id", verifyAdmin, verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const deleteTool = await toolsCollection.deleteOne(query);
