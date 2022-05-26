@@ -212,15 +212,15 @@ async function run() {
       console.log(id);
       const payment = req.body;
       const query = { _id: ObjectId(id) };
-      const updateTool = {
+      const updateOrder = {
         $set: {
           paid: true,
           transactionID: payment.transactionID,
         },
       };
-      const updateTools = await toolsCollection.updateOne(query, updateTool);
+      const updateOrders = await orderCollection.updateOne(query, updateOrder);
       const result = await paymentCollection.insertOne(payment);
-      res.send({ updateTools, result });
+      res.send({ updateOrders, result });
     });
 
     // post new data in order collection
@@ -252,6 +252,17 @@ async function run() {
       const query = { email: email };
       const result = await orderCollection.find(query).toArray();
       res.send(result);
+    });
+
+    // find a single order details
+    app.get("/orders/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const order = await orderCollection.findOne(query);
+      const query2 = { _id: ObjectId(order.tools_id) };
+      const tool = await toolsCollection.findOne(query2);
+      order.price = tool.price;
+      res.send(order);
     });
 
     // get all orders for admin
