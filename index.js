@@ -276,7 +276,7 @@ run().catch(console.dir);
 
 // root
 app.get("/", (req, res) => {
-  res.send("Axel Motors Portal running");
+  res.send("Axel Motors Portal running ....");
 });
 
 app.listen(port, () => {
