@@ -191,7 +191,7 @@ async function run() {
     });
 
     // delete a tool
-    app.delete("/tools/:id", verifyAdmin, verifyToken, async (req, res) => {
+    app.delete("/tools/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: ObjectId(id) };
       const deleteTool = await toolsCollection.deleteOne(query);
